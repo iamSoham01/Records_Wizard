@@ -1,0 +1,97 @@
+<template>
+
+    <lightning-card  title="Records Wizard" icon-name="standard:cms">
+
+        <!-- Start Lightning Card Body-->
+        <template if:true={loaded}>
+
+            <lightning-layout>
+                <!--Select Object-->
+                <lightning-layout-item size="4" padding="around-small">
+                    <lightning-combobox
+                        name="allObjects"
+                        label="Select Object"
+                        value={objName}
+                        placeholder="Select an Object"
+                        options={objOptions}
+                        onchange={handleObjComboBox}>
+                    </lightning-combobox>
+                </lightning-layout-item>
+
+                <!--Select Fields-->
+                <lightning-layout-item size="4" padding="around-small">
+                    <lightning-combobox 
+                        name="allObjFields" 
+                        label="Select Fields" 
+                        value={fieldValue}
+                        placeholder="Select Fields" 
+                        options={fieldOptions} 
+                        onchange={handleFieldComboBox}
+                        disabled={isObjectSelected}>
+                    </lightning-combobox>
+                    
+                    <div class="slds-p-around_x-small">
+                        <template for:each={allFieldValues} for:item="val">
+                            <lightning-pill key={val} name={val} label={val} onremove={handlePillRemove}></lightning-pill>
+                        </template>
+                    </div>
+                </lightning-layout-item>
+
+                <!--Select Number of Records-->
+                <lightning-layout-item size="2" padding="around-small">
+                    <lightning-input 
+                        type="number" 
+                        name="Number of Records" 
+                        label="Records to Display" 
+                        value={defaultLimit} 
+                        onchange={handleTotalRecords}>
+                    </lightning-input>
+                </lightning-layout-item>
+
+                <!--Buttons-->
+                <lightning-layout-item size="2" padding="around-small">
+                    <div style="margin-bottom: 5%; margin-top: -10%;">
+                            <lightning-button 
+                                label="Quick Reset" 
+                                onclick={handleReset}>
+                            </lightning-button>
+                        </div>
+                        
+                        <lightning-button 
+                            variant="brand" 
+                            label="Get Records" 
+                            onclick={handleFetchRecords}>
+                        </lightning-button>
+                </lightning-layout-item>
+            </lightning-layout>
+
+            <!-- Data Table -->
+            <template if:true={isDataFetched}>
+                
+                <lightning-layout>
+                    <lightning-layout-item size="12" padding="around-small">
+                        <lightning-datatable 
+                                key-field="Id"  
+                                data={tableRecords}  
+                                columns={tableColumns}
+                                show-row-number-column  
+                                onrowaction={callRowAction}>  
+                        </lightning-datatable>    
+                    </lightning-layout-item>
+                </lightning-layout>
+                
+            </template>
+        </template>
+        
+        <!--Spinner-->
+        <template if:false={loaded}>
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </template>
+
+        <!--Footer-->
+        <p slot="footer">Powered By Salesforce ❤️</p>
+        
+    </lightning-card>
+    <!-- End Lightning Card Body-->
+
+</template>
