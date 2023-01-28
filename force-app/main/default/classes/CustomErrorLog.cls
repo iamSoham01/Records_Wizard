@@ -28,13 +28,27 @@ public with sharing class CustomErrorLog {
               
             //Log information in object
             CustomException__c exc = new CustomException__c();
-            exc.Govt_Limit_in_Executing_Code__c = String.format('{0}\n{1}\n{2}\n{3}',new List<string>{queryLimit, dmLimit, dmlStat, cPUT});
-            exc.Exception_Message__c = e.getMessage();
-            exc.Exception_Type__c = e.getTypeName();
-            exc.Line_Number__c = e.getLineNumber();
-            exc.StackTrace__c = e.getStackTraceString();
-            exc.MethodName__c = methodName;
-            exc.ClassName__c = className;
+            if(Schema.SObjectType.CustomException__c.fields.Govt_Limit_in_Executing_Code__c.isCreateable()){
+                exc.Govt_Limit_in_Executing_Code__c = String.format('{0}\n{1}\n{2}\n{3}',new List<string>{queryLimit, dmLimit, dmlStat, cPUT});
+            }
+            if(Schema.SObjectType.CustomException__c.fields.Exception_Message__c.isCreateable()){
+                exc.Exception_Message__c = e.getMessage();
+            }
+            if(Schema.SObjectType.CustomException__c.fields.Exception_Type__c.isCreateable()){    
+                exc.Exception_Type__c = e.getTypeName();
+            }
+            if(Schema.SObjectType.CustomException__c.fields.Line_Number__c.isCreateable()){    
+                exc.Line_Number__c = e.getLineNumber();
+            }
+            if(Schema.SObjectType.CustomException__c.fields.StackTrace__c.isCreateable()){
+                exc.StackTrace__c = e.getStackTraceString();
+            }
+            if(Schema.SObjectType.CustomException__c.fields.MethodName__c.isCreateable()){
+                exc.MethodName__c = methodName;
+            }
+            if(Schema.SObjectType.CustomException__c.fields.ClassName__c.isCreateable()){
+                exc.ClassName__c = className;
+            }
             if(Schema.sObjectType.CustomException__c.isCreateable()){
                 Database.insert(exc); 
             }

@@ -7,13 +7,13 @@ import { NavigationMixin } from 'lightning/navigation';
 
 export default class BaseComponent extends NavigationMixin(LightningElement) {
 
-    loaded = false;
+    isSpinnerLoaded = false;
     isDataFetched = false;
     objOptions = [];
     isObjectSelected = true;
     objName;
     fieldValue;
-    allFieldValues = [];
+    allSelectedFields = [];
     fieldOptions = [];
     fieldOptionsMaster = [];
     allFetchedRecords;
@@ -21,54 +21,72 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
     tableColumns = [];
     tableRecords;
     isShowModal = false;
+    items = [];
+    totalRecountCount = 0;
+    pageSize = 10;
+    endingRecord = 0;
+    totalPage = 0;
+    page = 1;
+    isPageChanged = false;
+    startingRecord = 1;
+    endingRecord = 0;
+    pillValues = [];
 
+    //Load all sObjects initially
     connectedCallback(){
         getObjects()
         .then(result => {
-            for (let key in result.objectMap) {
-                this.objOptions = [...this.objOptions, { label: key, value: result.objectMap[key] }];
+            for (let key in result.mapAllObjects) {
+                this.objOptions = [...this.objOptions, { label: result.mapAllObjects[key], value: key}];
             }
-            this.loaded = !this.loaded;
+            this.sortAlphabaticOrder(this.objOptions);
+            this.isSpinnerLoaded = !this.isSpinnerLoaded;
         })
         .catch(err => console.error(err));
     }
 
+    //Load all Obj Fields
     handleObjComboBox(event) {
         this.handleReset();
         this.objName = event.detail.value;
         getObjectFields({objectName: this.objName})
         .then(result => {
-
-            for (let key in result.mapObjfields) {
-                this.fieldOptions = [...this.fieldOptions, { label: key, value: result.mapObjfields[key] }];
-                this.fieldOptionsMaster = [...this.fieldOptionsMaster, { label: key, value: result.mapObjfields[key] }];
+            for (let key in result.mapSelectedObjFields) {
+                this.fieldOptions = [...this.fieldOptions, { label: key, value: result.mapSelectedObjFields[key] }];
+                this.fieldOptionsMaster = [...this.fieldOptionsMaster, { label: key, value: result.mapSelectedObjFields[key] }];
             }
+            this.sortAlphabaticOrder(this.fieldOptions);
             this.isObjectSelected = false;
         })
-        .catch(e => console.error(err))
+        .catch(err => console.error(err))
     }
 
+    //Selecting Fields
     handleFieldComboBox(event){
         this.fieldValue = event.detail.value;
-        if(!this.allFieldValues.includes(this.fieldValue)){
-            this.allFieldValues.push(this.fieldValue);
+        if(!this.allSelectedFields.includes(this.fieldValue)){
+            this.allSelectedFields.push(this.fieldValue);
         }
         this.modifyOptions();
     }
 
+    //Selecting fields displaying fields
     handlePillRemove(event) {
-        this.fieldValue = ``;
+        this.fieldValue = [];
         const valueRemoved = event.target.name;
-        this.allFieldValues.splice(this.allFieldValues.indexOf(valueRemoved), 1);
+        this.allSelectedFields.splice(this.allSelectedFields.indexOf(valueRemoved), 1);
         this.modifyOptions();
     }
 
+    //Sync selected fields and pill
     modifyOptions(){
         this.fieldOptions = this.fieldOptionsMaster.filter(elem=>{
-            if(!this.allFieldValues.includes(elem.value)) return elem;
+            if(!this.allSelectedFields.includes(elem.value)) return elem;
         })
+        this.sortAlphabaticOrder(this.fieldOptions);
     }
 
+    //Choose total records
     handleTotalRecords(event){
         this.defaultLimit = event.target.value;
         if(this.defaultLimit <= 0){
@@ -76,9 +94,10 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         }
     }
 
-    @api
-    async handleFetchRecords(){
+    //Display all records
+    @api async handleFetchRecords(){
 
+        //If Obj not selected show alert
         if(!this.objName){
             this.showNotification(`error`, `Please select an object`, `Alert`);
             throw new Error('No Object Selected');
@@ -89,7 +108,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         
         await getRecords({
             objectName: this.objName, 
-            fields: this.allFieldValues,
+            fields: this.allSelectedFields,
             totalRecords: this.defaultLimit
         })
         .then(result => {
@@ -98,46 +117,30 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
                 this.showNotification(`error`, result.errorMsg, `Error`);
                 throw new Error(result.errorMsg);
             }
-            if(!result.allRecords.length) {
-                this.showNotification(`warning`, `Sorry no records found`, `Alert`);
+            if(!result.lstAllRecords.length) {
+                this.showNotification(`warning`, `Sorry no records found`, `Warning`);
                 throw new Error('No records found');
-            }
-
-            const tableBtnRow = { 
-                type: "button-icon", 
-                typeAttributes: {  
-                    iconName: 'utility:edit',
-                    alternativeText: 'Edit',
-                    size: 'xx-small',
-                }       
             } 
-
-            for (let key in result.dataTableColumns) {
-                const col = result.dataTableColumns[key];
-                this.tableColumns = [...this.tableColumns, { label: col.label, fieldName: col.fieldName, type: col.type.toLowerCase()}];
-            }
-            if(result.isUpdatatble){
-                this.tableColumns = [...this.tableColumns, tableBtnRow];
-            }
-            
-            this.tableRecords = result.allRecords;
+            this.processRecords(result);
             this.isDataFetched = true;
         })
         .catch(err => console.error(err))
     }
 
+    //Reset
     handleReset(){
         this.objName = ``;
         this.fieldOptions = [];
         this.fieldOptionsMaster = [];
         this.isObjectSelected = true;
-        this.allFieldValues = [];
+        this.allSelectedFields = [];
         this.defaultLimit = 10;
         this.isDataFetched = false;
         this.tableColumns = [];
         this.tableRecords = [];
     }
 
+    //Display record detail page clicking edit button
     callRowAction(event){
         const recId = event.detail.row.Id;
         this[NavigationMixin.Navigate]({  
@@ -150,6 +153,83 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         })
     }
 
+    //Load records and columns in data table
+    processRecords(data){
+        this.items = data.lstAllRecords;
+        this.totalRecountCount = data.lstAllRecords.length; 
+        this.totalPage = Math.ceil(this.totalRecountCount / this.pageSize); 
+            
+        this.tableRecords = this.items.slice(0, this.pageSize); 
+        this.endingRecord = this.pageSize;
+        for (let key in data.lstDataTableColumns) {
+                const col = data.lstDataTableColumns[key];
+                let tableCol = {};
+                if(col.type == `REFERENCE`) {
+                    tableCol = { label: col.label, fieldName: col.fieldName, type: col.type};
+                }else{
+                    tableCol = { label: col.label, fieldName: col.fieldName, type: col.type.toLowerCase()};
+                }
+                this.tableColumns = [...this.tableColumns, tableCol];
+        }
+        if(data.isObjUpdatatble){
+                const tableBtnRow = { 
+                    type: "button-icon", 
+                    typeAttributes: {  
+                        iconName: 'utility:edit',
+                        alternativeText: 'Edit',
+                        size: 'xx-small',
+                }       
+            }
+            this.tableColumns = [...this.tableColumns, tableBtnRow];
+        }
+    }
+
+    //Previous button
+    previousHandler(){
+        this.isPageChanged = true;
+        if (this.page > 1) {
+            this.page = this.page - 1; 
+            this.displayRecordPerPage(this.page);
+        }
+    }
+
+    //Next button
+    nextHandler(){
+        this.isPageChanged = true;
+        if((this.page < this.totalPage) && this.page !== this.totalPage){
+            this.page = this.page + 1; 
+            this.displayRecordPerPage(this.page);            
+        }
+    }
+
+    //Display records in a page
+    displayRecordPerPage(page){
+
+        this.startingRecord = ((page -1) * this.pageSize) ;
+        this.endingRecord = (this.pageSize * page);
+
+        this.endingRecord = (this.endingRecord > this.totalRecountCount) 
+                            ? this.totalRecountCount : this.endingRecord; 
+
+        this.tableRecords = this.items.slice(this.startingRecord, this.endingRecord);
+        this.startingRecord = this.startingRecord + 1;
+
+    }    
+
+    //Sort drop down values alphabatically
+    sortAlphabaticOrder(arrToSort){
+        arrToSort.sort(function (a, b) {
+                if (a.label < b.label) {
+                    return -1;
+                }
+                if (a.label > b.label) {
+                    return 1;
+                }
+                    return 0;
+            });
+    }
+
+    //Toast msg
     showNotification(varType, msg, title) {
         const evt = new ShowToastEvent({
             title: title,

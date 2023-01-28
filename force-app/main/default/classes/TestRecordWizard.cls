@@ -3,7 +3,7 @@
 *  Created By      :   Soham Datta
 *  Created Date    :   27/01/2023
 *  Revision Logs   :   V_1.0 - Created
-*  Coverage        :   94%                  
+*  Coverage        :   92%%                  
 */
 
 @isTest (seeAllData = false)
@@ -20,14 +20,28 @@ private class TestRecordWizard {
         }
         insert accountToBeInterted;
     }
+    
+    private static User createUser(){
+        
+        List<Profile> ps = [select id, name from Profile where  name = 'System Administrator'];
+        User u = new User(Alias = 'admin', Email='systemadmin@force.com', 
+                          EmailEncodingKey='UTF-8', LastName='TestUser', LanguageLocaleKey='en_US', 
+                          LocaleSidKey='en_US', ProfileId = ps[0].Id, 
+                          TimeZoneSidKey='America/Los_Angeles', UserName='systemadminuser@force.com');
+        return u;
+        
+    }
 
     //Test GetObjects method
     @isTest
     static void testGetObjects(){
-
+        
+        User adminUser = TestRecordWizard.createUser();
         Test.startTest();
+        System.runAs(adminUser) {
             RecordWizard.WrapperData wrapData = RecordWizard.getObjects();
-            Assert.isTrue(wrapData.objectMap.size() > 0, 'All sObject Fetched');
+            Assert.isTrue(wrapData.mapAllObjects.size() > 0, 'All sObject Fetched');
+        }
         Test.stopTest();
     }
 
@@ -35,9 +49,12 @@ private class TestRecordWizard {
     @isTest
     static void testGetObjectFields(){
 
+        User adminUser = TestRecordWizard.createUser();
         Test.startTest();
+        System.runAs(adminUser) {
             RecordWizard.WrapperData wrapData = RecordWizard.getObjectFields('Account');
-            Assert.isTrue(wrapData.mapObjFields.size() > 0, 'Fields Selected');
+            Assert.isTrue(wrapData.mapSelectedObjFields.size() > 0, 'Fields Selected');
+        }
         Test.stopTest();
     }
 
@@ -47,10 +64,13 @@ private class TestRecordWizard {
 
         List<Account> accounts = [Select Id, Name From Account];
         List<String> fields = new List<String>();
-
+        User adminUser = TestRecordWizard.createUser();
+        
         Test.startTest();
+        System.runAs(adminUser) {
             RecordWizard.WrapperData wrapData = RecordWizard.getRecords('Account', fields, '');
-            Assert.isTrue(wrapData.allRecords.size() > 0, 'Account Records Found');
+            Assert.isTrue(wrapData.lstAllRecords.size() > 0, 'Account Records Found');
+        }
         Test.stopTest();
     }
 }

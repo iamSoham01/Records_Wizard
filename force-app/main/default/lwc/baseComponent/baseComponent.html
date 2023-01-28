@@ -1,12 +1,13 @@
+<!-- sldsValidatorIgnore -->
 <template>
 
     <lightning-card  title="Records Wizard" icon-name="standard:cms">
 
         <!-- Start Lightning Card Body-->
-        <template if:true={loaded}>
+        <template if:true={isSpinnerLoaded}>
 
             <lightning-layout>
-                <!--Select Object-->
+                <!--Start Select Object-->
                 <lightning-layout-item size="4" padding="around-small">
                     <lightning-combobox
                         name="allObjects"
@@ -17,8 +18,9 @@
                         onchange={handleObjComboBox}>
                     </lightning-combobox>
                 </lightning-layout-item>
+                <!--End Select Object-->
 
-                <!--Select Fields-->
+                <!--Start Select Fields-->
                 <lightning-layout-item size="4" padding="around-small">
                     <lightning-combobox 
                         name="allObjFields" 
@@ -31,13 +33,14 @@
                     </lightning-combobox>
                     
                     <div class="slds-p-around_x-small">
-                        <template for:each={allFieldValues} for:item="val">
+                        <template for:each={allSelectedFields} for:item="val">
                             <lightning-pill key={val} name={val} label={val} onremove={handlePillRemove}></lightning-pill>
                         </template>
                     </div>
                 </lightning-layout-item>
+                <!--End Select Fields-->
 
-                <!--Select Number of Records-->
+                <!--Start Select Number of Records-->
                 <lightning-layout-item size="2" padding="around-small">
                     <lightning-input 
                         type="number" 
@@ -47,8 +50,9 @@
                         onchange={handleTotalRecords}>
                     </lightning-input>
                 </lightning-layout-item>
+                <!--End Select Number of Records-->
 
-                <!--Buttons-->
+                <!--Start Buttons-->
                 <lightning-layout-item size="2" padding="around-small">
                     <div style="margin-bottom: 5%; margin-top: -10%;">
                             <lightning-button 
@@ -64,32 +68,54 @@
                         </lightning-button>
                 </lightning-layout-item>
             </lightning-layout>
+            <!--End Buttons-->
 
-            <!-- Data Table -->
+            <!-- Data Table Start -->
             <template if:true={isDataFetched}>
-                
                 <lightning-layout>
                     <lightning-layout-item size="12" padding="around-small">
                         <lightning-datatable 
                                 key-field="Id"  
                                 data={tableRecords}  
                                 columns={tableColumns}
-                                show-row-number-column  
+                                show-row-number-column
                                 onrowaction={callRowAction}>  
                         </lightning-datatable>    
                     </lightning-layout-item>
                 </lightning-layout>
-                
+
+                <lightning-layout horizontal-align="space">
+                    <lightning-layout-item flexibility="auto">
+                        <lightning-button 
+                            label="Previous" 
+                            icon-name="utility:chevronleft" 
+                            onclick={previousHandler}>
+                        </lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto">
+                        Page {page} of {totalPage}
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto">
+                        <lightning-button 
+                            label="Next" 
+                            icon-name="utility:chevronright" 
+                            icon-position="right"
+                            onclick={nextHandler}>
+                        </lightning-button>
+                    </lightning-layout-item>
+                </lightning-layout>
             </template>
+            <!-- Data Table End -->
         </template>
         
-        <!--Spinner-->
-        <template if:false={loaded}>
+        <!--Spinner Start -->
+        <template if:false={isSpinnerLoaded}>
             <lightning-spinner alternative-text="Loading"></lightning-spinner>
         </template>
+        <!--Spinner End -->
 
         <!--Footer-->
-        <p slot="footer">Powered By Salesforce ❤️</p>
+        <p slot="footer" style="text-align: right;">Powered By Salesforce</p>
         
     </lightning-card>
     <!-- End Lightning Card Body-->
