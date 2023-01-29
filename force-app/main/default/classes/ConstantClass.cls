@@ -12,6 +12,12 @@ public with sharing class ConstantClass {
     public static final String FEED = 'feed';
     public static final String GROUPOBJ = 'group';
     public static final String PUBLICOBJ = 'public';
+    public static final String APPLICATION = 'UserAppMenuItem';
+    public static final String ENTITYDEFINITION = 'EntityDefinition';
+    public static final String FIELDDEFINITION = 'FieldDefinition';
+    public static final String IDEACOMMENT = 'IdeaComment';
+    public static final String USERROLE = 'UserRole';
+    public static final String TABDEFINITION = 'TabDefinition';
     public static final String OBJ_NAME_MISSING = 'ObjectName is missing. Please select an object';
     public static final String DEFAULT_LIMIT = '10';
     public static final String NAME_FIELD = 'Name';
@@ -19,6 +25,7 @@ public with sharing class ConstantClass {
     public static final String CREATEDDATE_FIELD = 'CreatedDate';
     public static final String SELECT_QUERY = 'Select ';
     public static final String FROM_QUERY = ' From ';
-    public static final String ORDERBY_QUERY = ' Order By CreatedDate Desc Limit ';
-
+    public static final String ORDERBY_QUERY = ' Order By CreatedDate Desc';
+	public static final String LIMIT_QUERY = ' Limit ';
+    
 }

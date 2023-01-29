@@ -17,23 +17,19 @@ public with sharing class RecordWizard {
     * @Author       Soham Datta
     */
     @AuraEnabled(cacheable=true)
-        public static WrapperData getObjects(){
-            
-            wrapper.mapAllObjects = new Map<String,String>();
-            for(Schema.SObjectType objTyp : gd.values()){
+    public static WrapperData getObjects(){
+        
+        wrapper.mapAllObjects = new Map<String,String>();
+        for(Schema.SObjectType objTyp : gd.values()){
             String name = objTyp.getDescribe().getName();
             String label = objTyp.getDescribe().getLabel();
-                
-            if(!name.containsignorecase(ConstantClass.HISTORY) && !name.containsignorecase(ConstantClass.TAG) &&
-                    !name.containsignorecase(ConstantClass.SHARE) && !name.containsignorecase(ConstantClass.FEED) && 
-                    !name.containsignorecase(ConstantClass.GROUPOBJ) && !name.containsignorecase(ConstantClass.PUBLICOBJ) &&
-                    !objTyp.getDescribe().isCustomSetting() && objTyp.getDescribe().isAccessible() &&
-                    objTyp.getDescribe().isQueryable() && objTyp.getDescribe().isSearchable()){      
-                        //Filling objs name
-                        wrapper.mapAllObjects.put(name, label);
-                }
+            
+            //Filling objs name
+            if(RecordWizardHelper.getOrgObjects(name, objTyp)){      
+                wrapper.mapAllObjects.put(name, label);
             }
-            return wrapper;
+        }
+        return wrapper;
     }
 
     /*
@@ -43,26 +39,26 @@ public with sharing class RecordWizard {
     * @Author       Soham Datta
     */
     @AuraEnabled(cacheable=true)
-        public static WrapperData getObjectFields(String objectName){
-
-            wrapper.mapSelectedObjFields = new Map<String,String>();
-            
-            //Throw exception if obj name is blank
-            if(String.isBlank(objectName)){
-                throw new MyException(ConstantClass.OBJ_NAME_MISSING);
+    public static WrapperData getObjectFields(String objectName){
+        
+        wrapper.mapSelectedObjFields = new Map<String,String>();
+        
+        //Throw exception if obj name is blank
+        if(String.isBlank(objectName)){
+            throw new MyException(ConstantClass.OBJ_NAME_MISSING);
+        }
+        
+        Schema.SObjectType objToken = gd.get(objectName); 
+        Map<String,Schema.SObjectField> fieldsMap = objToken.getDescribe().fields.getMap();
+        
+        for(String field : fieldsMap.keySet()){
+            Schema.DescribeFieldResult describeResult = fieldsMap.get(field).getDescribe();
+            if (describeResult.isAccessible()) {
+                //Filling obj fields name
+                wrapper.mapSelectedObjFields.put(String.valueOf(describeResult.getLabel()), String.valueOf(field));
             }
-
-            Schema.SObjectType objToken = gd.get(objectName); 
-            Map<String,Schema.SObjectField> fieldsMap = objToken.getDescribe().fields.getMap();
-
-            for(String field : fieldsMap.keySet()){
-                Schema.DescribeFieldResult describeResult = fieldsMap.get(field).getDescribe();
-                if (describeResult.isAccessible()) {
-                    //Filling obj fields name
-                    wrapper.mapSelectedObjFields.put(String.valueOf(describeResult.getLabel()), String.valueOf(field));
-                }
-            }
-            return wrapper;
+        }
+        return wrapper;
     }
 
     /*
@@ -72,61 +68,69 @@ public with sharing class RecordWizard {
     * @Author       Soham Datta
     */
     @AuraEnabled(cacheable=false)
-        public static WrapperData getRecords(String objectName, List<String> fields, String totalRecords){
-
-            wrapper.lstAllRecords = new List<sObject>();
-            wrapper.lstDataTableColumns = new List<DataTableColumns>();
-
-            //Throw exception if obj name is blank
-            if(String.isBlank(objectName)){
-                throw new MyException(ConstantClass.OBJ_NAME_MISSING);
-            }
-
-            //Setting default num of records 10
-            if(String.isBlank(totalRecords) || Integer.valueOf(totalRecords) <= 0){
-                totalRecords = ConstantClass.DEFAULT_LIMIT;
-            }
-
-            //Setting default fields: Name, CreatedByDate, CreatedById
-            if(fields.isEmpty()){
-                fields = new List<String>{ConstantClass.NAME_FIELD, ConstantClass.CREATEDBYID_FIELD, ConstantClass.CREATEDDATE_FIELD};
-            }
-
-            try{
-
-                Schema.SObjectType objToken = gd.get(objectName); 
-                Map<String,Schema.SObjectField> fieldsMap = objToken.getDescribe().fields.getMap();
-                
-                //Dynamic query
-                String query = ConstantClass.SELECT_QUERY;
-                for(String field: fields){
-                    if(fieldsMap.containsKey(field)){
-                        query += field + ', ';
-
-                        //Filling data columns apiName, label and Type 
-                        Schema.DescribeFieldResult describeResult = fieldsMap.get(field).getDescribe();
-                        String fieldLabel = String.valueOf(describeResult.getLabel());
-                        String fieldName = String.valueOf(describeResult.getName());
-                        String fieldType = String.valueOf(describeResult.getType());
-                        DataTableColumns dataColumn = new DataTableColumns(fieldLabel, fieldName, fieldType);
-                        wrapper.lstDataTableColumns.add(dataColumn);
+    public static WrapperData getRecords(String objectName, List<String> fields, String totalRecords){
+        
+        wrapper.lstAllRecords = new List<sObject>();
+        wrapper.lstDataTableColumns = new List<DataTableColumns>();
+        String orderByQuery = '';
+        
+        //Throw exception if obj name is blank
+        if(String.isBlank(objectName)){
+            throw new MyException(ConstantClass.OBJ_NAME_MISSING);
+        }
+        
+        //Setting default num of records 10
+        if(String.isBlank(totalRecords) || Integer.valueOf(totalRecords) <= 0){
+            totalRecords = ConstantClass.DEFAULT_LIMIT;
+        }
+        
+        //Setting default fields: Name, CreatedByDate, CreatedById
+        if(fields.isEmpty()){
+            fields = new List<String>{ConstantClass.NAME_FIELD, ConstantClass.CREATEDBYID_FIELD, ConstantClass.CREATEDDATE_FIELD};
+                }
+        
+        try{
+            
+            Schema.SObjectType objToken = gd.get(objectName); 
+            Map<String,Schema.SObjectField> fieldsMap = objToken.getDescribe().fields.getMap();
+            
+            //Dynamic query
+            String query = ConstantClass.SELECT_QUERY;
+            for(String field: fields){
+                if(fieldsMap.containsKey(field)){
+                    query += field + ', ';
+                    
+                    //Filling data columns apiName, label and Type 
+                    Schema.DescribeFieldResult describeResult = fieldsMap.get(field).getDescribe();
+                    String fieldLabel = String.valueOf(describeResult.getLabel());
+                    String fieldName = String.valueOf(describeResult.getName());
+                    String fieldType = String.valueOf(describeResult.getType());
+                    DataTableColumns dataColumn = new DataTableColumns(fieldLabel, fieldName, fieldType);
+                    wrapper.lstDataTableColumns.add(dataColumn);
+                    
+                    if(field.containsIgnoreCase(ConstantClass.CREATEDDATE_FIELD)){
+                        orderByQuery = ConstantClass.ORDERBY_QUERY;
                     }
                 }
-                query = query.removeEnd(', ') + ConstantClass.FROM_QUERY + objectName + ConstantClass.ORDERBY_QUERY + totalRecords;
-
-                //Query all records user has read access
-                SObjectAccessDecision securityDecision = Security.stripInaccessible(
-                    AccessType.READABLE, Database.query(String.escapeSingleQuotes(query))
-                    );
-                wrapper.lstAllRecords = securityDecision.getRecords();
-                //Checking user has object update permission 
-                wrapper.isObjUpdatatble = objToken.getDescribe().isUpdateable();
-
-            }catch(Exception e){
-                wrapper.errorMsg = String.valueOf(e.getMessage());
-                CustomErrorLog.logException(e);
             }
-            return wrapper;
+            query = query.removeEnd(', ') + ConstantClass.FROM_QUERY + objectName
+                + ConstantClass.ORDERBY_QUERY + ConstantClass.LIMIT_QUERY + totalRecords;
+            
+            System.debug('query: '+query);
+            
+            //Query all records user has read access
+            SObjectAccessDecision securityDecision = Security.stripInaccessible(
+                AccessType.READABLE, Database.query(String.escapeSingleQuotes(query))
+            );
+            wrapper.lstAllRecords = securityDecision.getRecords();
+            //Checking user has object update permission 
+            wrapper.isObjUpdatatble = objToken.getDescribe().isUpdateable();
+            
+        }catch(Exception e){
+            wrapper.errorMsg = String.valueOf(e.getMessage());
+            CustomErrorLog.logException(e);
+        }
+        return wrapper;
     }
 
     /*
@@ -143,14 +147,14 @@ public with sharing class RecordWizard {
         @AuraEnabled public String fieldName {get;set;}
         //Column Data Type
         @AuraEnabled public String type {get;set;}
-    
-            public DataTableColumns(String label, String fieldName, String type)
-            {
-                this.label     = label;
-                this.fieldName = fieldName;
-                this.type      = type;          
-            }
+        
+        public DataTableColumns(String label, String fieldName, String type)
+        {
+            this.label     = label;
+            this.fieldName = fieldName;
+            this.type      = type;          
         }
+    }
 
     /*
     * @Name         WrapperData 
@@ -159,7 +163,7 @@ public with sharing class RecordWizard {
     * @Description  This wrapper is the main container to communicate with ui
     */
     public class WrapperData {
-
+        
         //Objects Name and Label
         @AuraEnabled public Map<String,String> mapAllObjects;
         //Object Fields Name and Label
@@ -172,7 +176,7 @@ public with sharing class RecordWizard {
         @AuraEnabled public List<DataTableColumns> lstDataTableColumns {get;set;}
         //Checking User Update Permission on Object
         @AuraEnabled public Boolean isObjUpdatatble;
-
+        
     }
 
 

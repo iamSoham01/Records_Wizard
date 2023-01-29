@@ -31,6 +31,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
     startingRecord = 1;
     endingRecord = 0;
     pillValues = [];
+    isPagination = false;
 
     //Load all sObjects initially
     connectedCallback(){
@@ -112,7 +113,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
             totalRecords: this.defaultLimit
         })
         .then(result => {
-
+            
             if(result.errorMsg) {
                 this.showNotification(`error`, result.errorMsg, `Error`);
                 throw new Error(result.errorMsg);
@@ -182,6 +183,8 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
             }
             this.tableColumns = [...this.tableColumns, tableBtnRow];
         }
+        this.isPagination = this.totalRecountCount > this.pageSize;
+        this.isNxtBtn = this.isPagination;
     }
 
     //Previous button
@@ -198,7 +201,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         this.isPageChanged = true;
         if((this.page < this.totalPage) && this.page !== this.totalPage){
             this.page = this.page + 1; 
-            this.displayRecordPerPage(this.page);            
+            this.displayRecordPerPage(this.page);
         }
     }
 
@@ -214,7 +217,19 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         this.tableRecords = this.items.slice(this.startingRecord, this.endingRecord);
         this.startingRecord = this.startingRecord + 1;
 
-    }    
+    }
+
+    //Next Btn Visibility
+    @api 
+    get isNxtBtn(){
+        return this.page < this.totalPage;
+    }
+
+    //Prev Btn Visibility
+    @api 
+    get isPrevBtn(){
+        return this.page > 1;
+    }
 
     //Sort drop down values alphabatically
     sortAlphabaticOrder(arrToSort){

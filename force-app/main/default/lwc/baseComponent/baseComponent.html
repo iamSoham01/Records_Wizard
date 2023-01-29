@@ -55,12 +55,14 @@
                 <!--Start Buttons-->
                 <lightning-layout-item size="2" padding="around-small">
                     <div style="margin-bottom: 5%; margin-top: -10%;">
+                            <!--Quick Reset Btn-->
                             <lightning-button 
                                 label="Quick Reset" 
                                 onclick={handleReset}>
                             </lightning-button>
                         </div>
                         
+                        <!--Get Records Btn-->
                         <lightning-button 
                             variant="brand" 
                             label="Get Records" 
@@ -84,29 +86,41 @@
                     </lightning-layout-item>
                 </lightning-layout>
 
-                <lightning-layout horizontal-align="space">
-                    <lightning-layout-item flexibility="auto">
-                        <lightning-button 
-                            label="Previous" 
-                            icon-name="utility:chevronleft" 
-                            onclick={previousHandler}>
-                        </lightning-button>
-                    </lightning-layout-item>
-                    <lightning-layout-item flexibility="auto">
-                        Page {page} of {totalPage}
-                    </lightning-layout-item>
-                    <lightning-layout-item flexibility="auto">
-                        <lightning-button 
-                            label="Next" 
-                            icon-name="utility:chevronright" 
-                            icon-position="right"
-                            onclick={nextHandler}>
-                        </lightning-button>
-                    </lightning-layout-item>
-                </lightning-layout>
+                <!-- Pagination Start -->
+                <template if:true={isPagination}>
+                    <lightning-layout horizontal-align="space">
+                        <lightning-layout-item flexibility="auto">
+                            <!-- Prev Btn -->
+                            <template if:true={isPrevBtn}>
+                                <lightning-button 
+                                    label="Previous" 
+                                    icon-name="utility:chevronleft" 
+                                    onclick={previousHandler}>
+                                </lightning-button>
+                            </template>
+                        </lightning-layout-item>
+                        
+                        <lightning-layout-item flexibility="auto">
+                            Page {page} of {totalPage}
+                        </lightning-layout-item>
+                        <!-- Next Btn -->
+                        <lightning-layout-item flexibility="auto">
+                            <template if:true={isNxtBtn}>
+                                <lightning-button 
+                                    label="Next" 
+                                    icon-name="utility:chevronright" 
+                                    icon-position="right"
+                                    onclick={nextHandler}>
+                                </lightning-button>
+                            </template>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                </template>
+                <!-- Pagination End -->
             </template>
             <!-- Data Table End -->
         </template>
+        <!-- End Lightning Card Body-->
         
         <!--Spinner Start -->
         <template if:false={isSpinnerLoaded}>

@@ -3,7 +3,7 @@
 *  Created By      :   Soham Datta
 *  Created Date    :   27/01/2023
 *  Revision Logs   :   V_1.0 - Created
-*  Coverage        :   92%%                  
+*  Coverage        :   96%                  
 */
 
 @isTest (seeAllData = false)
@@ -53,7 +53,7 @@ private class TestRecordWizard {
         Test.startTest();
         System.runAs(adminUser) {
             RecordWizard.WrapperData wrapData = RecordWizard.getObjectFields('Account');
-            Assert.isTrue(wrapData.mapSelectedObjFields.size() > 0, 'Fields Selected');
+            Assert.isTrue(wrapData.mapSelectedObjFields.size() > 0, 'Fields Selected');            
         }
         Test.stopTest();
     }
@@ -68,9 +68,13 @@ private class TestRecordWizard {
         
         Test.startTest();
         System.runAs(adminUser) {
-            RecordWizard.WrapperData wrapData = RecordWizard.getRecords('Account', fields, '');
-            Assert.isTrue(wrapData.lstAllRecords.size() > 0, 'Account Records Found');
+            RecordWizard.WrapperData wrapData1 = RecordWizard.getRecords('Account', fields, '');
+            Assert.isTrue(wrapData1.lstAllRecords.size() > 0, 'Account Records Found');
+            
+            RecordWizard.WrapperData wrapData2 = RecordWizard.getRecords('Mango', fields, '');
+            Assert.isTrue(wrapData2.lstAllRecords.size() == 0, 'No Record Found');
         }
         Test.stopTest();
     }
+    
 }
