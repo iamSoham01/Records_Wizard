@@ -13,7 +13,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
     isObjectSelected = true;
     objName;
     fieldValue;
-    allSelectedFields = [];
+    allSelectedFields = [`createddate`, `name`, `createdbyid`];
     fieldOptions = [];
     fieldOptionsMaster = [];
     allFetchedRecords;
@@ -30,7 +30,6 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
     isPageChanged = false;
     startingRecord = 1;
     endingRecord = 0;
-    pillValues = [];
     isPagination = false;
 
     //Load all sObjects initially
@@ -123,6 +122,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
                 throw new Error('No records found');
             } 
             this.processRecords(result);
+            this.page = 1;
             this.isDataFetched = true;
         })
         .catch(err => console.error(err))
@@ -134,7 +134,7 @@ export default class BaseComponent extends NavigationMixin(LightningElement) {
         this.fieldOptions = [];
         this.fieldOptionsMaster = [];
         this.isObjectSelected = true;
-        this.allSelectedFields = [];
+        this.allSelectedFields = [`createddate`, `name`, `createdbyid`];
         this.defaultLimit = 10;
         this.isDataFetched = false;
         this.tableColumns = [];
